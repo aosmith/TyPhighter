@@ -10,9 +10,9 @@ class TyPhighter
 
   def self.test_method
     this_object = TyPhighter.new
-    urls = ["http://www.google.com", "http://www.yahoo.com", "http://www.bing.com"]
+    request_objects = [{:url => "http://www.google.com"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
     params = {}
-    params[:urls] = urls
+    params[:request_objects] = request_objects
     this_object.new_threaded_http params
   end
 
@@ -23,9 +23,9 @@ class TyPhighter
 
   ##
   # Required params:
-  # :urls - (POLYMORPHIC) contain a linear array or urls, or a named hash of urls
-  # =>  ["http://www.google.com" , "http://www.yahoo.com", "http://www.bing.com"]
-  # =>  {"http://www.google.com" : {:post_args => {"query" => "let me google that for you"}}}
+  # :request_objects - contains a linear array of request objects:
+  # =>  [{ :url => "http://www.google.com", :post_args => {"key" => "value"} }, {:url => "http://www.yahoo.com", :post_args => {"key" => "value"}, :options => {:timeout => 5} }]
+  # =>  
   #
   # Optional params:
   # :blocking - true or false, if false
@@ -38,27 +38,41 @@ class TyPhighter
     params = check_params params
     new_threads = []
     semaphore = Mutex.new
-    results = []
-    params[:urls].each do |url|
+    results = {}
+    params[:request_objects].each do |request_object|
       new_threads << Thread.new do
         this_thread = Thread.current
-        if url.start_with? "https"
+        if request_object[:url].start_with? "https"
           use_ssl = true
         else
           use_ssl = false
         end
-        this_thread[:uri] = URI.parse(url)
+        this_thread[:uri] = URI.parse(request_object[:url])
         this_thread[:http] = Net::HTTP.new(this_thread[:uri].host, this_thread[:uri].port)
         this_thread[:http].use_ssl = use_ssl
         this_thread[:http].open_timeout = params[:timeout]
         this_thread[:http].read_timeout = params[:timeout]
         this_thread[:http].ssl_timeout = params[:timeout]
-        this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri)
+        if request_object[:post_args].nil?
+          if request_object[:options][:headers].nil?
+            this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri)
+          else
+            this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri, request_object[:options][:headers])
+          end
+        else
+          if request_object[:options][:headers].nil?
+            this_thread[:request] = Net::HTTP::Post.new(this_thread['uri'].request_uri)
+          else
+            this_thread[:request] = Net::HTTP::Post.new(this_thread['uri'].request_uri, request_object[:options][:headers])
+          end
+          this_thread[:request].set_form_data(request_object[:post_args])
+        end
+        warn "\nMaking request: " + this_thread[:request].to_s
         this_thread[:response] = this_thread[:http].request(this_thread[:request])
         return_hash = {}
         return_hash[:body] = this_thread[:response].body
         semaphore.synchronize {
-          results << return_hash[:body]
+          results[request_object[:url]] = return_hash[:body]
         }
       end
     end
@@ -75,7 +89,11 @@ class TyPhighter
         thread.join
       end
     end
-    puts results.size
+    results.each do |k,v|
+      puts "key: " + k[0,50]
+      puts "value: " + v[0,50]
+    end
+    nil
   end
   
   ##
@@ -101,17 +119,23 @@ class TyPhighter
   private
   
   def check_params params
-    puts params[:urls]
-    if params[:urls].nil?
-      raise "Must pass params[:urls]"
+    puts params[:request_objects]
+    if params[:request_objects].nil?
+      raise "Must pass params[:request_objects]"
     end
     
-    if params[:urls].kind_of? Hash
-      @results = {}
-    elsif params[:urls].kind_of? Array
-      @results = []
+    unless params[:request_objects].kind_of? Array
+      raise "params[:request_objects] must be an array."
     else
-      raise "params[:urls] must be a hash or an array."
+      params[:request_objects].each do |request_object|
+        unless request_object.kind_of? Hash
+          raise "request objects must be hash: " + request_object.to_s
+        end
+        if request_object[:options].nil?
+          request_object[:options] = {}
+          warn "Failed to pass options for: " + request_object.to_s
+        end
+      end
     end
     
     if params[:blocking].nil?
