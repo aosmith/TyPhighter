@@ -3,7 +3,7 @@ TyPhighter is multithreaded http library.
 Usage:
 def self.test_method
   this_object = TyPhighter.new
-  request_objects = [{:url => "http://www.google.com/"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
+  request_objects = [{:url => &quote;http://www.google.com/&quote;},{:url => &quote;http://www.yahoo.com&quote;},{:url => &quote;http://www.bing.com&quote;}]
   params = {}
   params = request_objects
   this_object.new_threaded_http params
