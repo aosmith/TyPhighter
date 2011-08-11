@@ -13,9 +13,9 @@ module TyPhighter
 
     def self.test_method
       this_object = TyPhighter.new
-      request_objects = [{:url => "http://www.google.com"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
+      request_objects = [{:url => "http://www.google.com/"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
       params = {}
-      params[:request_objects] = request_objects
+      params = request_objects
       this_object.new_threaded_http params
     end
 
@@ -42,9 +42,10 @@ module TyPhighter
       new_threads = []
       semaphore = Mutex.new
       results = {}
-      params[:request_objects].each do |request_object|
+      params.each do |request_object|
         new_threads << Thread.new do
           this_thread = Thread.current
+          puts request_object.to_s
           if request_object[:url].start_with? "https"
             use_ssl = true
           else
@@ -53,9 +54,11 @@ module TyPhighter
           this_thread[:uri] = URI.parse(request_object[:url])
           this_thread[:http] = Net::HTTP.new(this_thread[:uri].host, this_thread[:uri].port)
           this_thread[:http].use_ssl = use_ssl
-          this_thread[:http].open_timeout = params[:timeout]
-          this_thread[:http].read_timeout = params[:timeout]
-          this_thread[:http].ssl_timeout = params[:timeout]
+          this_thread[:http].open_timeout = request_object[:timeout]
+          this_thread[:http].read_timeout = request_object[:timeout]
+          if use_ssl == true
+            this_thread[:http].ssl_timeout = request_object[:timeout]
+          end
           if request_object[:post_args].nil?
             if request_object[:options][:headers].nil?
               this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri)
@@ -77,6 +80,9 @@ module TyPhighter
           semaphore.synchronize {
             results[request_object[:url]] = return_hash[:body]
           }
+          if request_object[:options][:blocking] == true
+            this_thread.join
+          end
         end
       end
       new_threads.each do |thread|
@@ -87,8 +93,8 @@ module TyPhighter
           @finished_threads.add(thread)
         end
       end
-      if params[:blocking] == true
-        @running_threads.list.each do |thread|
+      @running_threads.list.each do |thread|
+        if thread.alive?
           thread.join
         end
       end
@@ -123,36 +129,41 @@ module TyPhighter
 
     def check_params params
       #puts params[:request_objects]
-      if params[:request_objects].nil?
-        raise "Must pass params[:request_objects]"
+      if params.nil?
+        raise "Must pass params"
       end
 
-      unless params[:request_objects].kind_of? Array
-        raise "params[:request_objects] must be an array."
+      unless params.kind_of? Array
+        raise "params must be an array."
       else
-        params[:request_objects].each do |request_object|
-          unless request_object.kind_of? Hash
-            raise "request objects must be hash: " + request_object.to_s
-          end
-          if request_object[:options].nil?
-            request_object[:options] = {}
-            warn "Failed to pass options for: " + request_object.to_s
-          end
+        params.each do |request_object|
+          request_object = check_request_object request_object
         end
       end
-
-      if params[:blocking].nil?
-        params[:blocking] = true
-        warn "Failed to pass params[:blocking], defaulting to blocking request."
-      end
-
-      if params[:timeout].nil?
-        params[:timeout] = 10
-        warn "Failed to pass params[:timeout], defaulting to 10 seconds."
-      end
-
       return params
     end
+
+    def check_request_object request_object
+      unless request_object.kind_of? Hash
+        raise "request objects must be hash: " + request_object.to_s
+      end
+      
+      if request_object[:options].nil?
+        request_object[:options] = {}
+        warn "Failed to pass options for: " + request_object.to_s
+      end
+      
+      if request_object[:url].end_with? "/"
+        warn "url should not contain trailing slash(/): " + request_object.to_s
+      end
+      
+      if request_object[:timeout].nil?
+        request_object[:options][:timeout] = 10
+        warn "Failed to pass params[:timeout], defaulting to 10 seconds."
+      end
+      return request_object
+    end
+
 
   end
 end

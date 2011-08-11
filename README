@@ -1,12 +1,10 @@
 TyPhighter is multithreaded http library.
 
 Usage:
-my_fighter = TyPhighter::TyPhighter.new()
-params = {}
-request_objects = []
-request_objects << {:url => "http://www.google.com"}
-request_objects << {:url => "http://www.yahoo.com"}
-request_objects << {:url => "http://www.bing.com"}
-params[:request_objects] = [request_objects]
-test.new_threaded_http(params)
-my_fighter.new_threaded_http
+def self.test_method
+  this_object = TyPhighter.new
+  request_objects = [{:url => "http://www.google.com/"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
+  params = {}
+  params = request_objects
+  this_object.new_threaded_http params
+end
