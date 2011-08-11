@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Typhighter::VERSION
   s.authors     = ["Alex Smith"]
   s.email       = ["aosmith@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "http://dumbhipster.com/"
   s.summary     = "TyPhighter is a multithreaded http gem."
   s.description = "http://dumbhipster.com/"
 
