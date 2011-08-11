@@ -70,7 +70,7 @@ module TyPhighter
             end
             this_thread[:request].set_form_data(request_object[:post_args])
           end
-          warn "\nMaking request: " + this_thread[:request].to_s
+          #warn "\nMaking request: " + this_thread[:request].to_s
           this_thread[:response] = this_thread[:http].request(this_thread[:request])
           return_hash = {}
           return_hash[:body] = this_thread[:response].body
@@ -92,11 +92,11 @@ module TyPhighter
           thread.join
         end
       end
-      results.each do |k,v|
-        puts "key: " + k[0,50]
-        puts "value: " + v[0,50]
-      end
-      nil
+      #results.each do |k,v|
+      #  puts "key: " + k[0,50]
+      #  puts "value: " + v[0,50]
+      #end
+      results
     end
 
     ##
@@ -122,7 +122,7 @@ module TyPhighter
     private
 
     def check_params params
-      puts params[:request_objects]
+      #puts params[:request_objects]
       if params[:request_objects].nil?
         raise "Must pass params[:request_objects]"
       end
