@@ -1,0 +1,15 @@
+TyPhighter is multithreaded http library.
+
+Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported:
+http://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+(c) Alex Smith, 2011
+
+Usage:
+def self.test_method
+  this_object = TyPhighter.new
+  request_objects = [{:url => "http://www.google.com"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
+  params = {}
+  params = request_objects
+  this_object.new_threaded_http params
+end
