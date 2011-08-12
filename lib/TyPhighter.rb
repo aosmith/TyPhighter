@@ -5,12 +5,12 @@ module TyPhighter
     require 'net/http'
     require 'uri'
     require 'thread'
-
+    
     @running_threads = nil
     @finished_threads = nil
     @results = nil
-
-
+    
+    
     def self.test_method
       this_object = TyPhighter.new
       request_objects = [{:url => "http://www.google.com/"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
@@ -18,12 +18,12 @@ module TyPhighter
       params = request_objects
       this_object.new_threaded_http params
     end
-
+    
     def initialize
       @running_threads = ThreadGroup.new
       @finished_threads = ThreadGroup.new
     end
-
+    
     ##
     # Required params:
     # :request_objects - contains a linear array of request objects:
@@ -31,7 +31,7 @@ module TyPhighter
     # =>  
     #
     # Optional params:
-    # :blocking - true or false, if false
+    # :blocking - true or false, if false the request will not block
     # :port
     # :timeout - Defaults to 10 seconds
     # :headers - Defaults to empty
@@ -56,6 +56,7 @@ module TyPhighter
           this_thread[:http].use_ssl = use_ssl
           this_thread[:http].open_timeout = request_object[:timeout]
           this_thread[:http].read_timeout = request_object[:timeout]
+          this_thread[:blocking] = request_object[:blocking]
           if use_ssl == true
             this_thread[:http].ssl_timeout = request_object[:timeout]
           end

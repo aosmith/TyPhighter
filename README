@@ -1,5 +1,10 @@
 TyPhighter is multithreaded http library.
 
+Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported:
+http://creativecommons.org/licenses/by-sa/3.0/legalcode
+
+(c) Alex Smith, 2011
+
 Usage:
 def self.test_method
   this_object = TyPhighter.new
