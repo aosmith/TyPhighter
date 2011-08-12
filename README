@@ -6,6 +6,7 @@ http://creativecommons.org/licenses/by-sa/3.0/legalcode
 (c) Alex Smith, 2011
 
 Usage:
+```ruby
 def self.test_method
   this_object = TyPhighter.new
   request_objects = [{:url => "http://www.google.com"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
@@ -13,3 +14,4 @@ def self.test_method
   params = request_objects
   this_object.new_threaded_http params
 end
+```
