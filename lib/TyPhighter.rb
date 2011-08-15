@@ -9,11 +9,6 @@ module TyPhighter
     @running_threads = nil
     @results = nil
     
-    
-    def self.callback_test body
-      puts "in callback: " + body.to_s
-    end
-    
     def self.test_method
       this_object = TyPhighter.new
       request_objects = [{ :url => "http://www.google.com/", :options => { } },{ :url => "http://www.yahoo.com", :options => { }},{ :url => "http://www.bing.com", :options => { } }]
@@ -82,23 +77,18 @@ module TyPhighter
             end
             this_thread[:request].set_form_data(request_object[:post_args])
           end
-          #warn "\nMaking request: " + this_thread[:request].to_s
           this_thread[:response] = this_thread[:http].request(this_thread[:request])
           return_hash = {}
           return_hash[:body] = this_thread[:response].body
           semaphore.synchronize {
             results[request_object[:url]] = return_hash[:body]
           }
-          unless request_object[:options][:callback].nil?
-            request_object[:options][:callback].call(return_hash[:body])
-          end
         end
       end
       new_threads.each do |thread|
         thread.join
       end
       results
-      #nil
     end
     
     private
