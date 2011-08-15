@@ -7,16 +7,24 @@ module TyPhighter
     require 'thread'
     
     @running_threads = nil
-    @finished_threads = nil
     @results = nil
     
     
+    def self.callback_test body
+      puts "in callback: " + body.to_s
+    end
+    
     def self.test_method
       this_object = TyPhighter.new
-      request_objects = [{:url => "http://www.google.com/"},{:url => "http://www.yahoo.com"},{:url => "http://www.bing.com"}]
-      params = {}
-      params = request_objects
-      this_object.new_threaded_http params
+      request_objects = [{ :url => "http://www.google.com/", :options => { } },{ :url => "http://www.yahoo.com", :options => { }},{ :url => "http://www.bing.com", :options => { } }]
+      this_object.new_threaded_http request_objects
+    end
+    
+    def self.build_request_object url
+      this_request_object = {}
+      this_request_object[:url] = url
+      this_request_object[:options] = {}
+      return this_request_object
     end
     
     def initialize
@@ -40,6 +48,7 @@ module TyPhighter
     def new_threaded_http params
       params = check_params params
       new_threads = []
+      blocking_threads = []
       semaphore = Mutex.new
       results = {}
       params.each do |request_object|
@@ -54,11 +63,10 @@ module TyPhighter
           this_thread[:uri] = URI.parse(request_object[:url])
           this_thread[:http] = Net::HTTP.new(this_thread[:uri].host, this_thread[:uri].port)
           this_thread[:http].use_ssl = use_ssl
-          this_thread[:http].open_timeout = request_object[:timeout]
-          this_thread[:http].read_timeout = request_object[:timeout]
-          this_thread[:blocking] = request_object[:blocking]
+          this_thread[:http].open_timeout = request_object[:options][:timeout]
+          this_thread[:http].read_timeout = request_object[:options][:timeout]
           if use_ssl == true
-            this_thread[:http].ssl_timeout = request_object[:timeout]
+            this_thread[:http].ssl_timeout = request_object[:options][:timeout]
           end
           if request_object[:post_args].nil?
             if request_object[:options][:headers].nil?
@@ -81,51 +89,18 @@ module TyPhighter
           semaphore.synchronize {
             results[request_object[:url]] = return_hash[:body]
           }
-          if request_object[:options][:blocking] == true
-            this_thread.join
+          unless request_object[:options][:callback].nil?
+            request_object[:options][:callback].call(return_hash[:body])
           end
         end
       end
       new_threads.each do |thread|
-        if thread.alive?
-          @running_threads.add(thread)
-        else
-          warn "Thread finished: " + thread.to_s
-          @finished_threads.add(thread)
-        end
+        thread.join
       end
-      @running_threads.list.each do |thread|
-        if thread.alive?
-          thread.join
-        end
-      end
-      #results.each do |k,v|
-      #  puts "key: " + k[0,50]
-      #  puts "value: " + v[0,50]
-      #end
       results
+      #nil
     end
-
-    ##
-    # Returns true if all threads have completed, false otherwise
-    ##
-    def threads_complete
-      @threads.each do |thread|
-        if thread.alive?
-          return true
-        end
-      end
-      return false
-    end
-
-    def get_data
-
-    end
-
-    def block_and_wait_for_threads
-
-    end
-
+    
     private
 
     def check_params params
@@ -158,9 +133,14 @@ module TyPhighter
         warn "url should not contain trailing slash(/): " + request_object.to_s
       end
       
-      if request_object[:timeout].nil?
+      if request_object[:options][:timeout].nil?
         request_object[:options][:timeout] = 10
-        warn "Failed to pass params[:timeout], defaulting to 10 seconds."
+        warn "Failed to pass [:options][:timeout], default: 10 seconds."
+      end
+      
+      if request_object[:options][:blocking].nil?
+        request_object[:options][:blocking] = true
+        warn "Failed to pass [:options][:blocking], defaulting to true"
       end
       return request_object
     end
