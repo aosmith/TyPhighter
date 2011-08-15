@@ -119,10 +119,6 @@ module TyPhighter
         warn "Failed to pass options for: " + request_object.to_s
       end
       
-      if request_object[:url].end_with? "/"
-        warn "url should not contain trailing slash(/): " + request_object.to_s
-      end
-      
       if request_object[:options][:timeout].nil?
         request_object[:options][:timeout] = 10
         warn "Failed to pass [:options][:timeout], default: 10 seconds."
