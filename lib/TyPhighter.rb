@@ -90,7 +90,7 @@ module TyPhighter
           thread.join
         end
       rescue
-        results = '{}'
+        results = {}
       end
       results
     end
