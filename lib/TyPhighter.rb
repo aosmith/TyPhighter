@@ -25,6 +25,7 @@ module TyPhighter
     def initialize
       @running_threads = ThreadGroup.new
       @finished_threads = ThreadGroup.new
+      puts "this is new"
     end
     
     ##
@@ -66,13 +67,13 @@ module TyPhighter
             end
             if request_object[:post_args].nil?
               if request_object[:options][:headers].nil?
-                this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri)
+                this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri, { "accept-encoding" => "gzip;q=1.0,deflate;q=0.6,identity;q=0.3" })
               else
                 this_thread[:request] = Net::HTTP::Get.new(this_thread['uri'].request_uri, request_object[:options][:headers])
               end
             else
               if request_object[:options][:headers].nil?
-                this_thread[:request] = Net::HTTP::Post.new(this_thread['uri'].request_uri)
+                this_thread[:request] = Net::HTTP::Post.new(this_thread['uri'].request_uri, { "accept-encoding" => "gzip;q=1.0,deflate;q=0.6,identity;q=0.3" })
               else
                 this_thread[:request] = Net::HTTP::Post.new(this_thread['uri'].request_uri, request_object[:options][:headers])
               end
@@ -81,8 +82,18 @@ module TyPhighter
             this_thread[:response] = this_thread[:http].request(this_thread[:request])
             return_hash = {}
             return_hash[:body] = this_thread[:response].body
+            if request_object[:options][:headers].nil?
+              begin
+                message_contents = Zlib::GzipReader.new(StringIO.new(return_hash[:body])).read
+              rescue
+                warn "#{request_object[:url]} Does not appear to respond with gzip encoding."
+                message_contents = return_hash[:body]
+              end
+            else
+              message_contents = return_hash[:body]
+            end
             semaphore.synchronize {
-              results[request_object[:url]] = return_hash[:body]
+                results[request_object[:url]] = message_contents
             }
           end
         end
