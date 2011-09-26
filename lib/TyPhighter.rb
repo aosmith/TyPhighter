@@ -49,7 +49,6 @@ module TyPhighter
       params.each do |request_object|
         new_threads << Thread.new do
           this_thread = Thread.current
-          puts request_object.to_s
           if request_object[:url].start_with? "https"
             use_ssl = true
           else
@@ -84,7 +83,7 @@ module TyPhighter
             begin
               message_contents = Zlib::GzipReader.new(StringIO.new(return_hash[:body])).read
             rescue
-              warn "#{request_object[:url]} Does not appear to respond with gzip encoding."
+              #warn "#{request_object[:url]} Does not appear to respond with gzip encoding."
               message_contents = return_hash[:body]
             end
           else
@@ -126,17 +125,17 @@ module TyPhighter
       
       if request_object[:options].nil?
         request_object[:options] = {}
-        warn "Failed to pass options for: " + request_object.to_s
+        #warn "Failed to pass options for: " + request_object.to_s
       end
       
       if request_object[:options][:timeout].nil?
         request_object[:options][:timeout] = 10
-        warn "Failed to pass [:options][:timeout], default: 10 seconds."
+        #warn "Failed to pass [:options][:timeout], default: 10 seconds."
       end
       
       if request_object[:options][:blocking].nil?
         request_object[:options][:blocking] = true
-        warn "Failed to pass [:options][:blocking], defaulting to true"
+        #warn "Failed to pass [:options][:blocking], defaulting to true"
       end
       return request_object
     end
